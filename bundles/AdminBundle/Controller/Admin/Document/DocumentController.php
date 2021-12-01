@@ -1136,7 +1136,7 @@ class DocumentController extends ElementControllerBase implements KernelControll
 
         if (Chromium::isSupported()) {
             $tool = Chromium::class;
-        } else if (HtmlToImage::isSupported()) {
+        } else {
             $tool = HtmlToImage::class;
         }
 

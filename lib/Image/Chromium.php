@@ -53,7 +53,6 @@ class Chromium
      * @param string $url
      * @param string $outputFile
      * @param string $windowSize
-     * @param string|null $format
      *
      * @return bool
      * @throws \Exception
