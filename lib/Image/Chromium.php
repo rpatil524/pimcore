@@ -9,8 +9,8 @@
  * Full copyright and license information is available in
  * LICENSE.md which is distributed with this source code.
  *
- *  @copyright  Copyright (c) Pimcore GmbH (http://www.pimcore.org)
- *  @license    http://www.pimcore.org/license     GPLv3 and PCL
+ * @copyright  Copyright (c) Pimcore GmbH (http://www.pimcore.org)
+ * @license    http://www.pimcore.org/license     GPLv3 and PCL
  */
 
 namespace Pimcore\Image;
@@ -23,27 +23,26 @@ use Symfony\Component\Process\Process;
 /**
  * @internal
  *
- * @deprecated
  */
-class HtmlToImage
+class Chromium
 {
     /**
      * @return bool
      */
     public static function isSupported()
     {
-        return (bool) self::getWkhtmltoimageBinary();
+        return (bool)self::getChromiumBinary();
     }
 
     /**
      * @return bool
      */
-    public static function getWkhtmltoimageBinary()
+    public static function getChromiumBinary()
     {
-        foreach (['wkhtmltoimage', 'wkhtmltoimage-amd64'] as $app) {
-            $wk2img = \Pimcore\Tool\Console::getExecutable($app);
-            if ($wk2img) {
-                return $wk2img;
+        foreach (['chromium', 'chrome'] as $app) {
+            $chromium = \Pimcore\Tool\Console::getExecutable($app);
+            if ($chromium) {
+                return $chromium;
             }
         }
 
@@ -53,50 +52,44 @@ class HtmlToImage
     /**
      * @param string $url
      * @param string $outputFile
-     * @param int $screenWidth
-     * @param string $format
+     * @param string $windowSize
+     * @param string|null $format
      *
      * @return bool
+     * @throws \Exception
      */
-    public static function convert($url, $outputFile, $screenWidth = 1200, $format = 'png')
+    public static function convert(string $url, string $outputFile, string $windowSize = '1200,2000'): bool
     {
-        trigger_deprecation(
-            'pimcore/pimcore',
-            '10.3',
-            sprintf('%s has been deprecated and will be removed in Pimcore 11. Use %s instead.', __CLASS__, Chromium::class)
-        );
 
         // add parameter pimcore_preview to prevent inclusion of google analytics code, cache, etc.
         $url .= (strpos($url, '?') ? '&' : '?') . 'pimcore_preview=true';
 
         $options = [
-            '--width', $screenWidth,
-            '--format', $format,
+            '--headless',
+            '--no-sandbox',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--ignore-certificate-errors',
+            '--screenshot=' . $outputFile,
+            '--window-size=' .$windowSize
         ];
 
-        if (php_sapi_name() !== 'cli') {
-            $sessionData = Session::useSession(function (AttributeBagInterface $session) {
-                return ['name' => Session::getSessionName(), 'id' => Session::getSessionId()];
-            });
-
-            array_push($options, '--cookie', $sessionData['name'], (string)$sessionData['id']);
-        }
-
-        array_push($options, $url, $outputFile);
+        array_push($options, $url);
 
         // use xvfb if possible
         if ($xvfb = Console::getExecutable('xvfb-run')) {
             $command = [$xvfb, '--auto-servernum', '--server-args=-screen 0, 1280x1024x24',
-                self::getWkhtmltoimageBinary(), '--use-xserver', ];
+                self::getChromiumBinary()];
         } else {
-            $command = [self::getWkhtmltoimageBinary()];
+            $command = [self::getChromiumBinary()];
         }
         $command = array_merge($command, $options);
         Console::addLowProcessPriority($command);
         $process = new Process($command);
+        //p_r($process->getCommandLine()); die;
         $process->start();
 
-        $logHandle = fopen(PIMCORE_LOG_DIRECTORY . '/wkhtmltoimage.log', 'a');
+        $logHandle = fopen(PIMCORE_LOG_DIRECTORY . '/chromium.log', 'a');
         $process->wait(function ($type, $buffer) use ($logHandle) {
             fwrite($logHandle, $buffer);
         });
