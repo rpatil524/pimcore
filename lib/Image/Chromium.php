@@ -84,7 +84,6 @@ class Chromium
         $command = array_merge($command, $options);
         Console::addLowProcessPriority($command);
         $process = new Process($command);
-        //p_r($process->getCommandLine()); die;
         $process->start();
 
         $logHandle = fopen(PIMCORE_LOG_DIRECTORY . '/chromium.log', 'a');
