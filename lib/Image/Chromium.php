@@ -65,7 +65,6 @@ class Chromium
 
         $options = [
             '--headless',
-            '--no-sandbox',
             '--disable-gpu',
             '--disable-extensions',
             '--ignore-certificate-errors',
