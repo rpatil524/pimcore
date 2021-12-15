@@ -1118,7 +1118,7 @@ pimcore.helpers.generatePagePreview = function (id, path, callback) {
 
     var cb = callback;
 
-    if (pimcore.settings.htmltoimage) {
+    if (pimcore.settings.chromium || pimcore.settings.htmltoimage) {
         Ext.Ajax.request({
             url: Routing.generate('pimcore_admin_document_page_generatescreenshot'),
             method: "POST",
